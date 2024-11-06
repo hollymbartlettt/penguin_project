@@ -39,7 +39,7 @@ colnames(penguins_raw)
 penguins_clean <- cleaning_penguin_columns(penguins_raw)
 colnames(penguins_clean)
 
-# look at the changes
+# look at the changes (we can see that species names have been shortened)
 head(penguins_clean)
 
 
@@ -68,8 +68,8 @@ Note that the `echo = FALSE` parameter was added to the code chunk to prevent pr
 ## Exploratory Figures
 
 ```{r}
-# a place to start
-penguins_clean <- read_csv(here("data", "penguins_clean.csv"))
+# a place to start - this line messed up my code because i'm using the same script as last time (i think it's only for if you're using a new file?)
+# penguins_clean <- read_csv(here("data", "penguins_clean.csv"))
 
 # making a new variable 
 flipper_boxplot <- ggplot(
@@ -110,10 +110,13 @@ flipper_boxplot2 <- ggplot(
                 seed = 0)) + # random seed: for reproducibility, we want randomness in the figure to be the same every time
   scale_colour_manual(values = species_colours) +
   labs(x = "Penguin species",
-       y = "Flipper length (mm)")  # add axis labels
+       y = "Flipper length (mm)") +  # add axis labels
+  theme_bw()  # remove grey background
 
 # view the boxplot we have created 
 flipper_boxplot2
+
+# make a new file in our functions folder called plotting.R
 
 
 
