@@ -1,0 +1,121 @@
+---
+title: "penguins_analysis2"
+author: "holly bartlett"
+date: "2024-10-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+## loading libraries
+library(tidyverse)
+library(palmerpenguins)
+library(here)
+library(janitor)
+
+# we need this for the boxplot
+library(ggplot2)
+
+## loading our function file 
+source(here("functions", "cleaning.R"))
+
+## load the raw data
+penguins_raw <- read.csv(here("data", "penguins_raw.csv"))
+
+## using our piped function from the functions script
+cleaning_penguin_columns <- function(raw_data){
+  print("cleaned names, removed comments, removed empty rows and cols, removed delta")
+  raw_data %>% 
+    clean_names() %>% 
+    shorten_species() %>% 
+    remove_empty(c("rows", "cols")) %>% 
+    select(-comments) %>% 
+    select(-starts_with("delta"))
+}
+
+## save the clean data and check the output
+colnames(penguins_raw)
+penguins_clean <- cleaning_penguin_columns(penguins_raw)
+colnames(penguins_clean)
+
+# look at the changes
+head(penguins_clean)
+
+
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+## Exploratory Figures
+
+```{r}
+# a place to start
+penguins_clean <- read_csv(here("data", "penguins_clean.csv"))
+
+# making a new variable 
+flipper_boxplot <- ggplot(
+  data = penguins_clean, 
+  aes(x = species,
+      y = flipper_length_mm)) + 
+  geom_boxplot()
+flipper_boxplot
+# warning message: removed 2 rows containing non-finite outside the scale range (this is because we have some NA values in our dataset)
+# we want to remove NA values, but only from the columns we are interested in
+
+# use piping to subset the columns we want (species and flipper_length_mm) AND remove N/A values
+penguins_flippers <- penguins_clean %>% 
+  select(species, flipper_length_mm) %>% 
+  drop_na() # we already specified the data source at the beginning of the pipe
+head(penguins_flippers)
+
+# define colour mapping with names for each species
+# adelie = darkorange, chinstrap = purple, gentoo = cyan4
+species_colours <- c("Adelie" = "darkorange",
+                     "Chinstrap" = "purple",
+                     "Gentoo" = "cyan4")
+
+# try the boxplot again (no warning message!) 
+flipper_boxplot2 <- ggplot(
+  data = penguins_flippers, 
+  aes(x = species,
+      y = flipper_length_mm)) + 
+  geom_boxplot(
+    aes(color = species),
+    width = 0.3,
+    show.legend = FALSE) +  # make each species a different colour on the graph (following Palmer penguins colour scheme)
+  geom_jitter(aes(color = species),
+              alpha = 0.3,  # adds some transparency
+              show.legend = FALSE,  # add the raw data on top (jitter gives each point random variation around the central point)
+              position = position_jitter(
+                width = 0.2,
+                seed = 0)) + # random seed: for reproducibility, we want randomness in the figure to be the same every time
+  scale_colour_manual(values = species_colours) +
+  labs(x = "Penguin species",
+       y = "Flipper length (mm)")  # add axis labels
+
+# view the boxplot we have created 
+flipper_boxplot2
+
+
+
+```
+
