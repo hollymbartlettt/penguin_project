@@ -1,21 +1,10 @@
-## ---------------------------
+### THIS SCRIPT IS STORING FUNCTIONS TO CLEAN THE PALMER PENGUINS DATASET 
 ##
-## Script name: Cleaning.r
+## Script name: cleaning.R
+## Author: Holly Bartlett
+## Date Created: 2024-10-16
 ##
-## Purpose of script: 
-##      # A file of functions for cleaning the Palmer Penguins dataset
-##
-## Author: Dr. Lydia France / Holly Bartlett
-##
-## Date Created: 2024-10-01 / 2024-10-16
-##
-##
-## ---------------------------
-##
-## Notes:
-##   
-##
-## ---------------------------
+###
 
 
 

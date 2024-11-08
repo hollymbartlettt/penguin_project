@@ -1,29 +1,28 @@
 ---
-title: "penguins_analysis2"
+title: "penguins_analysis.Rmd"
 author: "holly bartlett"
 date: "2024-10-16"
 output: html_document
 ---
 
+## Session 1: Cleaning the Palmer Penguins Dataset
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-## loading libraries
+## loading required libraries
 library(tidyverse)
 library(palmerpenguins)
 library(here)
 library(janitor)
 
-# we need this for the boxplot
-library(ggplot2)
-
-## loading our function file 
+## loading our function files
 source(here("functions", "cleaning.R"))
 
-## load the raw data
+## loading the raw data
 penguins_raw <- read.csv(here("data", "penguins_raw.csv"))
 
-## using our piped function from the functions script
+## using our piped function from the functions script - designed to clean the palmer penguins dataset
 cleaning_penguin_columns <- function(raw_data){
   print("cleaned names, removed comments, removed empty rows and cols, removed delta")
   raw_data %>% 
@@ -39,69 +38,74 @@ colnames(penguins_raw)
 penguins_clean <- cleaning_penguin_columns(penguins_raw)
 colnames(penguins_clean)
 
-# look at the changes (we can see that species names have been shortened)
+## look at the changes (we can see that species names have been shortened)
 head(penguins_clean)
 
 
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
-
-## Exploratory Figures
+Using the renv package to install libraries in a reproducible way
 
 ```{r}
-# a place to start - this line messed up my code because i'm using the same script as last time (i think it's only for if you're using a new file?)
-# penguins_clean <- read_csv(here("data", "penguins_clean.csv"))
+# create a lockfile (snapshot) with the current state of dependencies in the project library
+renv::snapshot()
 
-# making a new variable 
-flipper_boxplot <- ggplot(
+# the next user can then run this code to install all the correct libraries (from the snapshot that I created)
+#renv::restore() 
+```
+
+## Session 2: Exploratory Figures
+
+Loading the packages required for this session (and updating renv)
+
+```{r}
+# loading packages
+library(ggplot2)
+library(patchwork)
+library(ragg)
+library(svglite)
+
+# updating renv
+renv::snapshot()
+
+```
+
+We can make a boxplot as a new variable:
+
+```{r}
+flipper_boxplot_demo1 <- ggplot(
   data = penguins_clean, 
   aes(x = species,
       y = flipper_length_mm)) + 
   geom_boxplot()
-flipper_boxplot
-# warning message: removed 2 rows containing non-finite outside the scale range (this is because we have some NA values in our dataset)
-# we want to remove NA values, but only from the columns we are interested in
+flipper_boxplot_demo1
+```
 
+However, we get a warning message: removed 2 rows containing non-finite outside the scale range (this is because we have some NA values in our dataset)
+
+We want to remove NA values, but only from the columns we are interested in for the boxplot - in this example, we are looking at species and flipper length (mm). We can also make this plot better by adding the (colourblind-friendly) Palmer Penguins colour scheme - and a few other settings.
+
+```{r}
 # use piping to subset the columns we want (species and flipper_length_mm) AND remove N/A values
 penguins_flippers <- penguins_clean %>% 
   select(species, flipper_length_mm) %>% 
   drop_na() # we already specified the data source at the beginning of the pipe
 head(penguins_flippers)
 
-# define colour mapping with names for each species
-# adelie = darkorange, chinstrap = purple, gentoo = cyan4
+# define colour mapping with names for each species (adelie = darkorange, chinstrap = purple, gentoo = cyan4)
 species_colours <- c("Adelie" = "darkorange",
                      "Chinstrap" = "purple",
                      "Gentoo" = "cyan4")
 
-# try the boxplot again (no warning message!) 
-flipper_boxplot2 <- ggplot(
+# creating a better boxplot (with no missing values)
+flipper_boxplot_demo2 <- ggplot(
   data = penguins_flippers, 
   aes(x = species,
       y = flipper_length_mm)) + 
   geom_boxplot(
     aes(color = species),
     width = 0.3,
-    show.legend = FALSE) +  # make each species a different colour on the graph (following Palmer penguins colour scheme)
+    show.legend = FALSE) +  # make data for each species a different colour on the graph (following Palmer penguins colour scheme)
   geom_jitter(aes(color = species),
               alpha = 0.3,  # adds some transparency
               show.legend = FALSE,  # add the raw data on top (jitter gives each point random variation around the central point)
@@ -114,11 +118,69 @@ flipper_boxplot2 <- ggplot(
   theme_bw()  # remove grey background
 
 # view the boxplot we have created 
-flipper_boxplot2
-
-# make a new file in our functions folder called plotting.R
-
-
+flipper_boxplot_demo2
 
 ```
 
+We can add these functions we have used to a new file ("plotting.R") in our "functions" folder - then load this file:
+
+```{r}
+source(here("functions", "plotting.R"))
+```
+
+We can create many different plots using this same function (I have named this function "plot_boxplot")
+
+```{r}
+# 2 by 2 grid subplots
+options(repr.plot.width = 8, repr.plot.height = 8)
+
+# create individual subplots with different y-axis columns
+plot1 <- plot_boxplot(penguins_clean, species, flipper_length_mm, "Penguin species", "Flipper length (mm)", species_colours)
+plot2 <- plot_boxplot(penguins_clean, species, culmen_length_mm, "Penguin species", "Culmen length (mm)", species_colours)
+plot3 <- plot_boxplot(penguins_clean, species, culmen_depth_mm, "Penguin species", "Culmen depth (mm)", species_colours)
+plot4 <- plot_boxplot(penguins_clean, species, body_mass_g, "Penguin species", "Body mass (g)", species_colours)
+
+# combine plots in a 2x2 grid
+combined_plot <- (plot1 | plot2) / (plot3 | plot4)
+combined_plot
+
+```
+
+We often want to save the plots we have created into a folder - here I have created one called "figures". The following code shows how to save plots as png files into this folder.
+
+```{r}
+
+# create a boxplot for the flippers data, using the function specified in "plotting.R"
+flipper_boxplot <- plot_boxplot(penguins_clean, species, flipper_length_mm, "Penguin species", "Flipper length (mm)", species_colours)
+
+# adding it as a png to the folder (must run all 3 lines together idk why) 
+agg_png("figures/penguin_boxplot_poster.png",
+        width = 20, height = 20, units = "cm",  # can set the size of the figure (important for making posters)
+        res = 300,  # can change the resolution
+        scaling = 1,  # can change how zoomed in the graph is
+        snap_rect = TRUE, bitsize = 8)
+print(flipper_boxplot)
+dev.off()
+
+# we may also want to make a powerpoint figure
+agg_png("figures/penguin_boxplot_powerpoint.png",
+        width = 20, height = 20, units = "cm", res = 300, scaling = 3,  snap_rect = TRUE, bitsize = 8)
+print(flipper_boxplot)
+dev.off()
+
+```
+
+We may also want to save plots as svg (vector) files - which are much higher resolution when you zoom in\*\*\*
+
+```{r}
+# adding our flippers plot to the folder as an svg file - for some reason this is not giving me a figure!!!
+flipper_boxplot <- plot_boxplot(penguins_clean, species, flipper_length_mm, "Penguin species", "Flipper length (mm)", species_colours)
+inches_conversion = 2.54
+svglite("figures/penguin_boxplot_vector.svg",
+        width = 20 / inches_conversion, height = 20 / inches_conversion)
+print(flipper_boxplot)
+dev.off()
+
+```
+
+I have also added these functions to the "plotting.R" script, in case I want to use them later
